@@ -627,7 +627,7 @@ private:
                 audio_format_t format,
                 audio_channel_mask_t channelMask,
                 audio_input_flags_t flags,
-                AudioMix *policyMix);
+                const sp<AudioPolicyMix> &policyMix);
 
         // internal function to derive a stream type value from audio attributes
         audio_stream_type_t streamTypefromAttributesInt(const audio_attributes_t *attr);
@@ -641,7 +641,40 @@ private:
         // select input device corresponding to requested audio source and return associated policy
         // mix if any. Calls getDeviceForInputSource().
         audio_devices_t getDeviceAndMixForInputSource(audio_source_t inputSource,
-                                                        AudioMix **policyMix = NULL);
+                                                      sp<AudioPolicyMix> *policyMix = NULL);
+
+        // Called by setDeviceConnectionState().
+        virtual status_t setDeviceConnectionStateInt(audio_devices_t device,
+                                                          audio_policy_dev_state_t state,
+                                                          const char *device_address,
+                                                          const char *device_name);
+        void updateMono(audio_io_handle_t output) {
+            AudioParameter param;
+            param.addInt(String8(AUDIO_PARAMETER_MONO_OUTPUT), (int)mMasterMono);
+            mpClientInterface->setParameters(output, param.toString());
+        }
+#ifdef DOLBY_ENABLE
+protected:
+#include "DolbyAudioPolicy.h"
+        DolbyAudioPolicy mDolbyAudioPolicy;
+#endif // DOLBY_END
+};
+
+};
+
+        // internal function to derive a stream type value from audio attributes
+        audio_stream_type_t streamTypefromAttributesInt(const audio_attributes_t *attr);
+        // event is one of STARTING_OUTPUT, STARTING_BEACON, STOPPING_OUTPUT, STOPPING_BEACON
+        // returns 0 if no mute/unmute event happened, the largest latency of the device where
+        //   the mute/unmute happened
+        uint32_t handleEventForBeacon(int event);
+        uint32_t setBeaconMute(bool mute);
+        bool     isValidAttributes(const audio_attributes_t *paa);
+
+        // select input device corresponding to requested audio source and return associated policy
+        // mix if any. Calls getDeviceForInputSource().
+        audio_devices_t getDeviceAndMixForInputSource(audio_source_t inputSource,
+                                                      sp<AudioPolicyMix> *policyMix = NULL);
 
         // Called by setDeviceConnectionState().
         status_t setDeviceConnectionStateInt(audio_devices_t device,
